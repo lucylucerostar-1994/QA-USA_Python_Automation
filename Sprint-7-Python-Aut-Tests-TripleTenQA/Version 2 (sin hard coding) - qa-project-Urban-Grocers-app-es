@@ -1,1 +1,68 @@
+In this version the token is obtained on each request.
 
+
+In the other version the token was obtained in the first request, it is saved and is the same one that will be used in the other requests.
+
+
+===============================================================================================================
+        
+                                    DETAILED EXPLANATION
+
+===============================================================================================================
+
+
+
+The difference between the two approaches primarily concerns how and when the Authorization header is handled, and the reuse of data such as headers. Below, I explain the most relevant differences:
+
+First option: Header with auth_token directly (cleaner and reusable)
+python
+Copy code
+kit_headers = {
+    "Content-Type": "application/json",
+    "Authorization": f"Bearer {auth_token}"
+}
+def post_new_client_kit(body):
+    return requests.post(configuration.URL_SERVICE + configuration.KITS_PATH,
+                         headers=data.kit_headers,
+                         json=body)
+
+
+Main advantage:
+The header is already defined with the auth_token included when the kit_headers dictionary is created.
+It's cleaner and more reusable: if you have multiple endpoints that require the same authorization header, you can define it once and then reuse the kit_headers dictionary in multiple places.
+If you already have the auth_token available (for example, you obtained it at the start of a session), simply include it in the header and use it in each request.
+Disadvantage:
+The auth_token must be pre-requested, meaning you need to have the token before calling the function. It's not very flexible if you need to obtain the token at runtime (e.g., dynamic authentication).
+Second option: Dynamic authentication (token obtained in the request itself)
+python
+Copy code
+kit_headers = {
+    "Content-Type": "application/json"
+}
+
+def post_new_client_kit(body):
+    headers = data.headers.copy()
+    auth_token = post_new_user(get_user_body("Axel")).json()["authToken"]
+    headers["Authorization"] = f"Bearer {auth_token}"
+
+    return requests.post(configuration.URL_SERVICE + configuration.KITS_PATH,
+                         headers=headers,
+                         json=body)
+
+Main Advantage:
+
+The authentication token is obtained dynamically within the post_new_client_kit function. If the token changes frequently or you need to obtain it at the time of the request, this option is more flexible.
+This solution doesn't depend on the token being passed in advance. You can obtain it automatically before each request, which is useful if you need to handle multiple users or authentication sessions in your test.
+Disadvantage:
+
+Less Efficient: In this example, you are obtaining the token within the function, which involves an additional request (probably an authentication request). This can make tests take longer if a new token needs to be obtained for each request.
+Repetition: If you need to obtain the auth_token in the same way at many points in the code, you would be repeating the authentication code.
+Summary:
+First Option:
+
+Better for reusing the auth_token once you already have it.
+It's cleaner and more efficient if you don't need to obtain the token dynamically each time.
+Second option:
+
+More flexible if you need to obtain the auth_token dynamically, but it can be slower and less efficient.
+Ideal if the auth_token changes frequently or you obtain it in real time before each request.
