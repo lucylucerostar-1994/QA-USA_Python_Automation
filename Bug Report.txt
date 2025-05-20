@@ -1,0 +1,32 @@
+"C:\Users\torse\Documents\Project Python\TripleTen\Urban.Grocers\qa-project-Urban-Grocers-app-es\.venv\Scripts\python.exe" "C:/Program Files/JetBrains/PyCharm Community Edition 2024.2.3/plugins/python-ce/helpers/pycharm/_jb_pytest_runner.py" --path "C:\Users\torse\Documents\Proyectos Python\TripleTen\Urban.Grocers\qa-project-Urban-Grocers-app-es\create_kit_name_kit_test.py" 
+Testing started at 10:15 PM ...
+Launching pytest with arguments C:\Users\torse\Documents\Project Python\TripleTen\Urban.Grocers\qa-project-Urban-Grocers-app-es\create_kit_name_kit_test.py --no-header --no-summary -q in C:\Users\torse\Documents\Proyectos Python\TripleTen\Urban.Grocers\qa-project-Urban-Grocers-app-es
+
+============================= test session starts =============================
+collecting ... collected 9 items
+
+create_kit_name_kit_test.py::test_create_kit_allowed_chars_1_success PASSED [ 11%]
+create_kit_name_kit_test.py::test_create_kit_max_allowed_chars_511_success PASSED [ 22%]
+create_kit_name_kit_test.py::test_create_kit_with_special_chars_success PASSED [ 33%]
+create_kit_name_kit_test.py::test_create_kit_with_spaces_success PASSED  [ 44%]
+create_kit_name_kit_test.py::test_create_kit_with_numbers_success PASSED [ 55%]
+create_kit_name_kit_test.py::test_create_kit_zero_chars_code_400 FAILED  [ 66%]
+create_kit_name_kit_test.py:54 (test_create_kit_zero_chars_code_400)
+201 != 400
+
+Expected :400
+Actual   :201
+<Click to see difference>
+
+def test_create_kit_zero_chars_code_400():
+>       negative_assert("")
+
+create_kit_name_kit_test.py:56:
+
+create_kit_name_kit_test.py::test_create_kit_512_chars_code_400 FAILED   [ 77%]
+create_kit_name_kit_test.py:57 (test_create_kit_512_chars_code_400)
+201 != 400
+
+Expected :400
+Actual   :201
+<Click to see difference>
