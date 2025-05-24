@@ -1,1 +1,0 @@
-git filter-repo --path .gitignore --path "Bug Report.txt" --path "PROJECT TEMPLATE.py" --path Test --path ci.yml --path create_kit_name_kit_test.py --path "Its for Urban Grocers" --path sender_stand_request.py --invert-paths
