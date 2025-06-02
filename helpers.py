@@ -1,84 +1,54 @@
-import json
-import time
-import ssl
-import urllib.request
 import logging
-from selenium.common.exceptions import WebDriverException, TimeoutException
-from urllib.error import URLError
+from selenium import webdriver
+from pages import UrbanRoutesPage
+from data import URBAN_ROUTES_URL, ADDRESS_FROM, ADDRESS_TO, PHONE_NUMBER, CARD_NUMBER, CARD_EXPIRY_DATE, CARD_CVV, MESSAGE_FOR_DRIVER
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 
+class TestUrbanRoutes:
 
-def retrieve_phone_code(driver) -> str:
-    """
-    Retrieves the phone confirmation code from browser logs using CDP.
+    @classmethod
+    def setup_class(cls):
+        from selenium.webdriver.chrome.options import Options
 
-    Use this only after the code is requested in the application.
+        # Set Chrome options
+        chrome_options = Options()
+        chrome_options.set_capability("goog:loggingPrefs", {'performance': 'ALL'})
+        cls.driver = webdriver.Chrome(options=chrome_options)
 
-    Args:
-        driver: The Selenium WebDriver instance.
+    def test_set_route(self):
+        self.driver.get(URBAN_ROUTES_URL)  # Open the URL for this test
+        routes_page = UrbanRoutesPage(self.driver)
+        routes_page.set_address(ADDRESS_FROM, ADDRESS_TO)  # Set 'from' and 'to' addresses
+        assert routes_page.get_from() == ADDRESS_FROM, f"Expected {ADDRESS_FROM}, but got {routes_page.get_from()}"
+        assert routes_page.get_to() == ADDRESS_TO, f"Expected {ADDRESS_TO}, but got {routes_page.get_to()}"
 
-    Returns:
-        str: Phone confirmation code.
+    def test_select_plan(self):
+        self.driver.get(URBAN_ROUTES_URL)  # Open the URL for this test
+        routes_page = UrbanRoutesPage(self.driver)
+        routes_page.select_supportive_plan()  # Select the 'Supportive' plan
+        assert routes_page.get_selected_tariff() == "Supportive", f"Expected 'Supportive' plan, but got {routes_page.get_selected_tariff()}"
 
-    Raises:
-        TimeoutException: If the code is not found within the retry limit.
-    """
-    for attempt in range(1, 11):  # Retry 10 times
-        try:
-            # Fetch browser logs related to phone number confirmation API
-            logs = [
-                log["message"]
-                for log in driver.get_log('performance')
-                if log.get("message") and 'api/v1/number?number' in log["message"]
-            ]
-            if logs:
-                for log in reversed(logs):
-                    message_data = json.loads(log)["message"]
-                    body = driver.execute_cdp_cmd(
-                        'Network.getResponseBody',
-                        {'requestId': message_data["params"]["requestId"]}
-                    )
-                    body_str = body.get('body', '') if body else ''
-                    if isinstance(body_str, str) and body_str:
-                        code = ''.join(filter(lambda c: c.isdigit(), body_str))
-                        if code:
-                            logging.info(f"Phone code found: {code}")
-                            return code  # Return code as soon as it's found
-        except WebDriverException as e:
-            logging.warning(f"Attempt {attempt}: WebDriverException occurred: {str(e)}. Retrying...")
-            time.sleep(1)
-        except Exception as e:
-            logging.error(f"An unexpected error occurred during code retrieval: {str(e)}")
-            raise TimeoutException("Timeout while trying to retrieve phone confirmation code.")
+    def test_fill_phone_number(self):
+        self.driver.get(URBAN_ROUTES_URL)  # Open the URL for this test
+        routes_page = UrbanRoutesPage(self.driver)
+        routes_page.fill_phone_number(PHONE_NUMBER)  # Fill the phone number
+        assert routes_page.get_phone_number() == PHONE_NUMBER, f"Expected {PHONE_NUMBER}, but got {routes_page.get_phone_number()}"
 
-    # Raise exception if the code is not found after 10 attempts
-    raise TimeoutException(
-        "Phone confirmation code not found after 10 attempts. Make sure the code was requested in the application."
-    )
+    def test_add_credit_card(self):
+        self.driver.get(URBAN_ROUTES_URL)  # Open the URL for this test
+        routes_page = UrbanRoutesPage(self.driver)
+        routes_page.add_credit_card(CARD_NUMBER, CARD_EXPIRY_DATE, CARD_CVV)  # Add the credit card details
+        assert routes_page.get_card_number() == CARD_NUMBER, f"Expected card number {CARD_NUMBER}, but got {routes_page.get_card_number()}"
 
+    def test_write_driver_comment(self):
+        self.driver.get(URBAN_ROUTES_URL)  # Open the URL for this test
+        routes_page = UrbanRoutesPage(self.driver)
+        routes_page.write_driver_comment(MESSAGE_FOR_DRIVER)  # Write a comment for the driver
+        assert routes_page.get_comment() == MESSAGE_FOR_DRIVER, f"Expected comment '{MESSAGE_FOR_DRIVER}', but got {routes_page.get_comment()}"
 
-def is_url_reachable(url: str) -> bool:
-    """
-    Checks if the given URL is reachable.
-
-    Args:
-        url (str): The URL to check.
-
-    Returns:
-        bool: True if reachable, False otherwise.
-    """
-    try:
-        ssl_ctx = ssl.create_default_context()
-        ssl_ctx.check_hostname = False
-        ssl_ctx.verify_mode = ssl.CERT_NONE
-
-        with urllib.request.urlopen(url, context=ssl_ctx) as response:
-            return response.status == 200
-    except URLError as e:
-        logging.error(f"URL check failed: {str(e)}")
-        return False
-    except Exception as e:
-        logging.error(f"An unexpected error occurred: {str(e)}")
-        return False
+    @classmethod
+    def teardown_class(cls):
+        logging.info("Closing the browser.")
+        cls.driver.quit()
