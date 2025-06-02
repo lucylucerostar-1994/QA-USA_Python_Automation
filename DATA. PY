@@ -1,12 +1,9 @@
-import json
+URBAN_ROUTES_URL = ''  https://cnt-07132786-7eb8-43ef-b96f-349aa4972fff.containerhub.tripleten-services.com
 
-def load_data(filepath):
-    with open(filepath, 'r') as file:
-        return json.load(file)
+ADDRESS_FROM = 'East 2nd Street, 601'
+ADDRESS_TO = '1300 1st St'
+PHONE_NUMBER = '+1 123 123 12 12'
+CARD_NUMBER = '1234 5678 9100'
+CARD_CODE = '1111'
+MESSAGE_FOR_DRIVER = 'Stop at the juice bar, please'
 
-def save_data(filepath, data):
-    with open(filepath, 'w') as file:
-        json.dump(data, file, indent=4)
-
-def filter_data(data, keyword):
-    return [item for item in data if keyword.lower() in item.lower()]
