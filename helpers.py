@@ -1,54 +1,101 @@
-# Retrieves Phone code. Do not change
-# File should be completely unchanged
+#!/usr/bin/python
 
-def retrieve_phone_code(driver) -> str:
-    """This code retrieves phone confirmation number and returns it as a string.
-    Use it when application waits for the confirmation code to pass it into your tests.
-    The phone confirmation code can only be obtained after it was requested in application."""
+# Filename: helpers.py
+# Author:   Aaron Karper
+# Created:  2011-07-21
+# Description:
+# 		Provides some helper functions, namely the @assure and
+#			@logging decorators and a accessor definition shortcut.
+#           
+from functools import wraps
+import logging
+def _(x):
+	"as in @assure(_, int, float)"
+	return x
+class assure:
+    """Assures a certain type on function calls. Ought to raise
+    an exception, if the respective argument does not satisfy its 
+    precondition and return a fitting representation of the argument
+    if it does. 
 
-    import json
-    import time
+    Example:
+        @assure(int)
+        def f(x):
+            return x+1
 
-    from selenium.common import WebDriverException
-    code = None
-    for i in range(10):
-        try:
-            logs = [log["message"] for log in driver.get_log('performance') if log.get("message")
-                    and 'api/v1/number?number' in log.get("message")]
-            for log in reversed(logs):
-                message_data = json.loads(log)["message"]
-                body = driver.execute_cdp_cmd('Network.getResponseBody',
-                                              {'requestId': message_data["params"]["requestId"]})
-                code = ''.join([x for x in body['body'] if x.isdigit()])
-        except WebDriverException:
-            time.sleep(1)
-            continue
-        if not code:
-            raise Exception("No phone confirmation code found.\n"
-                            "Please use retrieve_phone_code only after the code was requested in your application.")
-        return code
+        >>> f(1)
+        2
+        >>> f("2")
+        3
+        >>> f("bla")
+        ValueError: ...
+        """
+    def __init__(self, *types, **keys):
+        self.__types = types
+        self.__keys  = keys
+    def __call__(self, func):
+        @wraps(func)
+        def modified(*args, **kwargs):
+            casted_args = [t(x) for t,x in zip(self.__types, args)]
+            casted_kwargs = dict([k, self.__keys[k](kwargs[k])] for k in kwargs)
+            return func( *casted_args, **casted_kwargs )
+        return modified
 
+class Logging:
+    def func_arg(self, argument_list, keyword_arguments):
+        argument_strings = [repr(arg) for arg in argument_list]
+        keyword_strings = ["{} = {!r}".format(k, v) for k, v in
+                keyword_arguments.items()]
 
-# Checks if Routes is up and running. Do not change
-def is_url_reachable(url):
-    """Check if the URL can be reached. Pass the URL for Urban Routes as a parameter.
-    If it can be reached, it returns True, otherwise it returns False"""
+        return "({})".format(", ".join(argument_strings + keyword_strings))
 
-    import ssl
-    import urllib.request
+    def __init__(self, logger = logging.getLogger('Python').debug):
+        self.__logger = logger
 
-    try:
-        ssl_ctx = ssl.create_default_context()
-        ssl_ctx.check_hostname = False
-        ssl_ctx.verify_mode = ssl.CERT_NONE
+    def __call__(self, func):
+        @wraps(func)
+        def modified(*args, **key):
+            arguments = self.func_arg(args,key)
+            self.__logger("%s%s" % (func.func_name, arguments))
+            return func(*args, **key)
+        return modified
 
-        with urllib.request.urlopen(url, context=ssl_ctx) as response:
-            # print("Response Status Code:", response.status) #for debugging purposes
-            if response.status == 200:
-                 return True
-            else:
-                return False
-    except Exception as e:
-        print (e)
+class function_logging(Logging):
+    pass
 
-    return False
+class method_logging(Logging):
+    def func_arg(self, L, D):
+        return Logging.func_arg(self,L[1:], D)
+
+class logging(method_logging):
+    pass
+
+class func_name:
+    def __init__(self,name):
+        self.name = name
+    def __call__(self, f):
+        f.func_name = self.name
+        return f
+
+def accessor(string, logger = _, type = _):
+    """Shortcut to define a property object with type checking and logging"""
+    attrname = "_%s" %string
+    getter = lambda self: getattr(self, attrname)
+    @logging(logger)
+    @assure(_,type)
+    @func_name(string)
+    def setter(self, val):
+        setattr(self,attrname, val)
+    return property(getter,setter)
+
+def list_of(type):
+    return lambda l: map(type, l)
+def tuple_of(*types):
+    return lambda l: tuple(t(v) for t,v in zip(types, l))
+def isa(type):
+    def f(x):
+        if isinstance(x, type):
+            return x
+        else:
+            raise ValueError("{!r} should be a {!r} but is not".format(x, type))
+    return f
