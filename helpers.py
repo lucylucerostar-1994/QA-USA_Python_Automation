@@ -7,11 +7,3 @@ def is_url_reachable(url):
     except requests.RequestException:
         return False
 
-def format_string(s):
-    return s.strip().title()
-
-def calculate_percentage(part, total):
-    if total == 0:
-        return 0
-    return (part / total) * 100
-
