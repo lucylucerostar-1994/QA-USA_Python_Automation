@@ -8,19 +8,23 @@ class UrbanRoutesPage:
         self.driver = driver
         self.wait = WebDriverWait(driver, 10)
 
-    # Locators (selectors)
+    # Locators
     from_field = (By.ID, 'from')
     to_field = (By.ID, 'to')
     phone_field = (By.XPATH, '//input[@placeholder="Phone number"]')
     card_number_field = (By.XPATH, '//input[@placeholder="Card number"]')
+    card_code_field = (By.XPATH, '//input[@placeholder="Card code"]')  # Adjust if your field is named 'Card code'
     comment_field = (By.XPATH, '//textarea[@placeholder="Comment for the driver"]')
 
-    # Methods to interact with the form
+    # Methods
     def set_address(self, address_from, address_to):
-        self.driver.find_element(*self.from_field).send_keys(address_from)
-        self.driver.find_element(*self.to_field).send_keys(address_to)
+        from_input = self.driver.find_element(*self.from_field)
+        from_input.clear()
+        from_input.send_keys(address_from)
+        to_input = self.driver.find_element(*self.to_field)
+        to_input.clear()
+        to_input.send_keys(address_to)
 
-    # Method to get the values from the fields (getter methods)
     def get_from(self):
         return self.driver.find_element(*self.from_field).get_attribute("value")
 
@@ -33,15 +37,17 @@ class UrbanRoutesPage:
     def get_card_number(self):
         return self.driver.find_element(*self.card_number_field).get_attribute("value")
 
+    def get_card_code(self):
+        return self.driver.find_element(*self.card_code_field).get_attribute("value")
+
     def get_comment(self):
         return self.driver.find_element(*self.comment_field).get_attribute("value")
 
-    # Additional methods for interacting with the page
     def select_supportive_plan(self):
         supportive_plan_option = (By.XPATH, '//div[contains(@class, "tariff") and contains(text(), "Supportive")]')
         selected_tariff = (By.CLASS_NAME, 'is-selected')
         self.driver.find_element(*supportive_plan_option).click()
-        WebDriverWait(self.driver, 10).until(
+        self.wait.until(
             EC.text_to_be_present_in_element(selected_tariff, "Supportive")
         )
 
@@ -50,13 +56,20 @@ class UrbanRoutesPage:
         return self.driver.find_element(*selected_tariff).text
 
     def fill_phone_number(self, phone_number):
-        self.driver.find_element(*self.phone_field).send_keys(phone_number)
+        phone_input = self.driver.find_element(*self.phone_field)
+        phone_input.clear()
+        phone_input.send_keys(phone_number)
 
-    def add_credit_card(self, card_number, expiry_date, cvv):
-        self.driver.find_element(*self.card_number_field).send_keys(card_number)
-        # Assuming there are other fields for expiry and CVV
-        self.driver.find_element(By.XPATH, '//input[@placeholder="MM/YY"]').send_keys(expiry_date)
-        self.driver.find_element(By.XPATH, '//input[@placeholder="CVV"]').send_keys(cvv)
+    def add_credit_card(self, card_number, card_code):
+        card_input = self.driver.find_element(*self.card_number_field)
+        card_input.clear()
+        card_input.send_keys(card_number)
+        code_input = self.driver.find_element(*self.card_code_field)
+        code_input.clear()
+        code_input.send_keys(card_code)
 
     def write_driver_comment(self, comment):
-        self.driver.find_element(*self.comment_field).send_keys(comment)
+        comment_input = self.driver.find_element(*self.comment_field)
+        comment_input.clear()
+        comment_input.send_keys(comment)
+
