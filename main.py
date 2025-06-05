@@ -2,9 +2,6 @@ import logging
 from selenium import webdriver
 from pages import UrbanRoutesPage
 from data import (
-    logging.basicConfig(level=logging.INFO)
-import helpers
-)
 logging.basicConfig(level=logging.INFO)
 
 class TestUrbanRoutes:
